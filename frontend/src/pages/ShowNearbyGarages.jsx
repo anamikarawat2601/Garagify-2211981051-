@@ -1,11 +1,46 @@
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
-import { MapPin } from 'lucide-react';
+import { MapPin, Phone, Clock, Star, Search, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import Navbar from '../components/Navbar';
+
+const STATIC_STORES = [
+  { store_id: 1, name: 'AutoFix Garage', rating: 4.5, latitude: 40.712776, longitude: -74.005974, address: '123 Main St, New York, NY', phone_number: '+1-555-123-4567', open_hours: '8am - 6pm', services: 'Oil change, brakes, diagnostics' },
+  { store_id: 2, name: 'Speedy Repairs', rating: 4.2, latitude: 40.730610, longitude: -73.935242, address: '22 Queens Blvd, Queens, NY', phone_number: '+1-555-234-5678', open_hours: '9am - 7pm', services: 'Tires, brakes, general service' },
+  { store_id: 3, name: 'GaragePro Mechanics', rating: 4.8, latitude: 40.758896, longitude: -73.985130, address: '45 Midtown Ave, Manhattan, NY', phone_number: '+1-555-345-6789', open_hours: '7am - 5pm', services: 'Engine diagnostics, AC, transmission' },
+  { store_id: 4, name: 'FixIt Auto Care', rating: 3.9, latitude: 40.706192, longitude: -74.009160, address: '78 Broad St, New York, NY', phone_number: '+1-555-456-7890', open_hours: '8am - 8pm', services: 'Quick lube, tires, battery' },
+  { store_id: 5, name: 'WheelWorks Garage', rating: 4.7, latitude: 40.742054, longitude: -74.001524, address: '90 10th Ave, New York, NY', phone_number: '+1-555-567-8901', open_hours: '9am - 6pm', services: 'Alignment, suspension, tires' },
+  { store_id: 6, name: 'Manhattan Auto Clinic', rating: 4.6, latitude: 40.751620, longitude: -73.977230, address: '200 Park Ave, New York, NY', phone_number: '+1-555-678-9012', open_hours: '8am - 6pm', services: 'Oil change, engine diagnostics, brakes' },
+  { store_id: 7, name: 'Queens QuickFix', rating: 4.1, latitude: 40.744000, longitude: -73.948900, address: '88 Northern Blvd, Queens, NY', phone_number: '+1-555-789-0123', open_hours: '9am - 7pm', services: 'Tires, brakes, general service' },
+  { store_id: 8, name: 'Bronx Auto Care', rating: 4.3, latitude: 40.844782, longitude: -73.864827, address: '450 Fordham Rd, Bronx, NY', phone_number: '+1-555-890-1234', open_hours: '8am - 8pm', services: 'Tune-ups, tire rotation, repairs' },
+  { store_id: 9, name: 'Brooklyn Motors', rating: 4.7, latitude: 40.678178, longitude: -73.944158, address: '310 Flatbush Ave, Brooklyn, NY', phone_number: '+1-555-901-2345', open_hours: '9am - 6pm', services: 'General repairs, painting, diagnostics' },
+  { store_id: 10, name: 'SoHo Auto Works', rating: 4.9, latitude: 40.724330, longitude: -74.001850, address: '400 Broome St, SoHo, NY', phone_number: '+1-555-456-7892', open_hours: '8am - 6pm', services: 'Luxury car service, detailing, brakes' },
+  { store_id: 11, name: 'Chelsea Garage', rating: 4.5, latitude: 40.746500, longitude: -74.001374, address: '230 W 20th St, New York, NY', phone_number: '+1-555-567-8903', open_hours: '9am - 7pm', services: 'Oil change, suspension, air conditioning' },
+  { store_id: 12, name: 'Tribeca Auto Spa', rating: 4.9, latitude: 40.719526, longitude: -74.008993, address: '55 Hudson St, Tribeca, NY', phone_number: '+1-555-678-9015', open_hours: '8am - 6pm', services: 'Luxury service, detailing, performance tuning' },
+];
+
+const StarRating = ({ rating }) => {
+  const val = parseFloat(rating) || 0;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+      <Star size={14} fill="#f59e0b" color="#f59e0b" />
+      <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#f59e0b' }}>{val.toFixed(1)}</span>
+    </div>
+  );
+};
+
+const labelStyle = { display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#374151', marginBottom: 5 };
+const inputStyle = {
+  width: '100%', padding: '0.6rem 0.75rem', borderRadius: 8,
+  border: '1.5px solid #e2e8f0', fontSize: '0.875rem', color: '#0f172a',
+  background: '#f8fafc', outline: 'none', boxSizing: 'border-box',
+};
 
 const ShowNearbyGarages = () => {
   const [stores, setStores] = useState([]);
+  const [filtered, setFiltered] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
   const [showBooking, setShowBooking] = useState(false);
   const [selectedStore, setSelectedStore] = useState(null);
   const [vehicleType, setVehicleType] = useState('Car');
@@ -21,39 +56,13 @@ const ShowNearbyGarages = () => {
     const fetchStores = async () => {
       try {
         const res = await api.get('/nearbygarage/all');
-        setStores(res.data || []);
-      } catch (err) {
-        // Log error and fall back to static data silently (do not show an error banner)
-        console.error('Failed to fetch from backend, using static data:', err?.message || err);
-        // fallback static data (same list as backend staticStores)
-        const staticStores = [
-          { store_id: 1, name: 'AutoFix Garage', rating: 4.5, latitude: 40.712776, longitude: -74.005974, address: '123 Main St, New York, NY', phone_number: '+1-555-123-4567', open_hours: '8am - 6pm' },
-          { store_id: 2, name: 'Speedy Repairs', rating: 4.2, latitude: 40.730610, longitude: -73.935242, address: '22 Queens Blvd, Queens, NY', phone_number: '+1-555-234-5678', open_hours: '9am - 7pm' },
-          { store_id: 3, name: 'GaragePro Mechanics', rating: 4.8, latitude: 40.758896, longitude: -73.985130, address: '45 Midtown Ave, Manhattan, NY', phone_number: '+1-555-345-6789', open_hours: '7am - 5pm' },
-          { store_id: 4, name: 'FixIt Auto Care', rating: 3.9, latitude: 40.706192, longitude: -74.009160, address: '78 Broad St, New York, NY', phone_number: '+1-555-456-7890', open_hours: '8am - 8pm' },
-          { store_id: 5, name: 'WheelWorks Garage', rating: 4.7, latitude: 40.742054, longitude: -74.001524, address: '90 10th Ave, New York, NY', phone_number: '+1-555-567-8901', open_hours: '9am - 6pm' },
-          { store_id: 6, name: 'Manhattan Auto Clinic', rating: 4.6, latitude: 40.751620, longitude: -73.977230, address: '200 Park Ave, New York, NY', phone_number: '+1-555-678-9012', open_hours: '8am - 6pm', services: 'Oil change, engine diagnostics, brakes' },
-          { store_id: 7, name: 'Queens QuickFix', rating: 4.1, latitude: 40.744000, longitude: -73.948900, address: '88 Northern Blvd, Queens, NY', phone_number: '+1-555-789-0123', open_hours: '9am - 7pm', services: 'Tires, brakes, general service' },
-          { store_id: 8, name: 'Bronx Auto Care', rating: 4.3, latitude: 40.844782, longitude: -73.864827, address: '450 Fordham Rd, Bronx, NY', phone_number: '+1-555-890-1234', open_hours: '8am - 8pm', services: 'Tune-ups, tire rotation, repairs' },
-          { store_id: 9, name: 'Brooklyn Motors', rating: 4.7, latitude: 40.678178, longitude: -73.944158, address: '310 Flatbush Ave, Brooklyn, NY', phone_number: '+1-555-901-2345', open_hours: '9am - 6pm', services: 'General repairs, painting, diagnostics' },
-          { store_id: 10, name: 'Downtown Car Care', rating: 4.4, latitude: 40.707512, longitude: -74.011318, address: '15 Wall St, New York, NY', phone_number: '+1-555-012-3456', open_hours: '7am - 5pm', services: 'Oil change, batteries, inspections' },
-          { store_id: 11, name: 'Harlem Auto Service', rating: 4.2, latitude: 40.811550, longitude: -73.946477, address: '230 W 125th St, Harlem, NY', phone_number: '+1-555-234-5670', open_hours: '8am - 7pm', services: 'Transmission, brakes, alignment' },
-          { store_id: 12, name: 'East Village Garage', rating: 4.0, latitude: 40.726477, longitude: -73.981533, address: '120 Ave A, New York, NY', phone_number: '+1-555-345-6781', open_hours: '9am - 6pm', services: 'Tire change, diagnostics, battery replacement' },
-          { store_id: 13, name: 'SoHo Auto Works', rating: 4.9, latitude: 40.724330, longitude: -74.001850, address: '400 Broome St, SoHo, NY', phone_number: '+1-555-456-7892', open_hours: '8am - 6pm', services: 'Luxury car service, detailing, brakes' },
-          { store_id: 14, name: 'Chelsea Garage', rating: 4.5, latitude: 40.746500, longitude: -74.001374, address: '230 W 20th St, New York, NY', phone_number: '+1-555-567-8903', open_hours: '9am - 7pm', services: 'Oil change, suspension, air conditioning' },
-          { store_id: 15, name: 'ParkSlope Mechanics', rating: 4.3, latitude: 40.671072, longitude: -73.981918, address: '95 7th Ave, Brooklyn, NY', phone_number: '+1-555-678-9014', open_hours: '8am - 5pm', services: 'Tune-ups, batteries, engine repair' },
-          { store_id: 16, name: 'Upper West Auto', rating: 4.6, latitude: 40.787010, longitude: -73.975367, address: '300 Columbus Ave, New York, NY', phone_number: '+1-555-789-0125', open_hours: '8am - 6pm', services: 'Inspections, brakes, general repair' },
-          { store_id: 17, name: 'Greenpoint Garage', rating: 4.1, latitude: 40.730230, longitude: -73.954910, address: '45 Greenpoint Ave, Brooklyn, NY', phone_number: '+1-555-890-1236', open_hours: '9am - 6pm', services: 'Oil change, diagnostics, tires' },
-          { store_id: 18, name: 'Astoria Auto Clinic', rating: 4.4, latitude: 40.764357, longitude: -73.923462, address: '25 31st St, Astoria, NY', phone_number: '+1-555-901-2347', open_hours: '8am - 7pm', services: 'Brakes, battery, oil service' },
-          { store_id: 19, name: 'Williamsburg Garage', rating: 4.8, latitude: 40.708115, longitude: -73.957070, address: '50 Wythe Ave, Brooklyn, NY', phone_number: '+1-555-012-3458', open_hours: '9am - 6pm', services: 'Performance tuning, tire change, detailing' },
-          { store_id: 20, name: 'Lower East Auto Works', rating: 4.0, latitude: 40.718092, longitude: -73.987450, address: '220 Grand St, New York, NY', phone_number: '+1-555-234-5679', open_hours: '8am - 6pm', services: 'Tires, oil, diagnostics' },
-          { store_id: 21, name: 'Jamaica Auto Center', rating: 4.2, latitude: 40.702678, longitude: -73.788968, address: '980 Liberty Ave, Queens, NY', phone_number: '+1-555-345-6780', open_hours: '9am - 8pm', services: 'Repairs, oil, brakes' },
-          { store_id: 22, name: 'Long Island City Mechanics', rating: 4.3, latitude: 40.748000, longitude: -73.939000, address: '21st St, Long Island City, NY', phone_number: '+1-555-456-7893', open_hours: '8am - 7pm', services: 'Diagnostics, oil change, engine work' },
-          { store_id: 23, name: 'Flatiron Auto Repair', rating: 4.7, latitude: 40.741061, longitude: -73.989699, address: '75 W 23rd St, Flatiron, NY', phone_number: '+1-555-567-8904', open_hours: '9am - 6pm', services: 'General maintenance, suspension, brakes' },
-          { store_id: 24, name: 'Tribeca Auto Spa', rating: 4.9, latitude: 40.719526, longitude: -74.008993, address: '55 Hudson St, Tribeca, NY', phone_number: '+1-555-678-9015', open_hours: '8am - 6pm', services: 'Luxury service, detailing, performance tuning' },
-          { store_id: 25, name: 'Sunset Park Garage', rating: 4.1, latitude: 40.645532, longitude: -74.012385, address: '450 4th Ave, Brooklyn, NY', phone_number: '+1-555-789-0126', open_hours: '9am - 7pm', services: 'Brakes, engine service, oil change' }
-        ];
-        setStores(staticStores);
+        const data = Array.isArray(res.data) ? res.data : [];
+        const list = data.length > 0 ? data : STATIC_STORES;
+        setStores(list);
+        setFiltered(list);
+      } catch {
+        setStores(STATIC_STORES);
+        setFiltered(STATIC_STORES);
       } finally {
         setLoading(false);
       }
@@ -61,51 +70,46 @@ const ShowNearbyGarages = () => {
     fetchStores();
   }, []);
 
+  useEffect(() => {
+    const q = search.toLowerCase().trim();
+    if (!q) { setFiltered(stores); return; }
+    setFiltered(stores.filter(s =>
+      s.name?.toLowerCase().includes(q) ||
+      s.address?.toLowerCase().includes(q) ||
+      s.services?.toLowerCase().includes(q)
+    ));
+  }, [search, stores]);
+
+  const openBooking = (store) => {
+    const token = localStorage.getItem('token');
+    if (!token) { navigate('/login'); return; }
+    setSelectedStore(store);
+    setVehicleType('Car'); setServiceType(''); setBookingDate(''); setBookingTime('');
+    setBookingMessage(''); setBookingSuccess(false);
+    setShowBooking(true);
+  };
+
   const handleBookingSubmit = async (e) => {
     e.preventDefault();
-    setBookingMessage('');
-    if (!selectedStore) return;
-
-    // Basic validation
     if (!vehicleType || !serviceType || !bookingDate || !bookingTime) {
-      setBookingMessage('Please fill all booking fields.');
-      setBookingSuccess(false);
-      return;
+      setBookingMessage('Please fill all fields.'); setBookingSuccess(false); return;
     }
-
     const token = localStorage.getItem('token');
-    if (!token) {
-      // require login
-      setBookingMessage('Please login to make a booking. Redirecting to login...');
-      setBookingSuccess(false);
-      setTimeout(() => navigate('/login'), 800);
-      return;
-    }
-
+    if (!token) { navigate('/login'); return; }
     setSubmitting(true);
     try {
-      const payload = {
+      const res = await api.post('/booking', {
         store_id: selectedStore.store_id,
         vehicle_type: vehicleType,
         service_type: serviceType,
         booking_date: bookingDate,
-        booking_time: bookingTime
-      };
-
-      const res = await api.post('/booking', payload, { headers: { Authorization: `Bearer ${token}` } });
-      setBookingMessage(res.data?.message || 'Booking created');
+        booking_time: bookingTime,
+      }, { headers: { Authorization: `Bearer ${token}` } });
+      setBookingMessage(res.data?.message || 'Booking confirmed!');
       setBookingSuccess(true);
-      // optionally close modal after short delay
-      setTimeout(() => {
-        setShowBooking(false);
-        setSelectedStore(null);
-        // reset form
-        setVehicleType('Car'); setServiceType(''); setBookingDate(''); setBookingTime(''); setBookingMessage(''); setBookingSuccess(false);
-      }, 1200);
+      setTimeout(() => { setShowBooking(false); }, 1500);
     } catch (err) {
-      console.error('Booking error', err?.response || err);
-      const msg = err?.response?.data?.error || err?.response?.data?.message || 'Failed to create booking';
-      setBookingMessage(msg);
+      setBookingMessage(err?.response?.data?.error || 'Failed to create booking.');
       setBookingSuccess(false);
     } finally {
       setSubmitting(false);
@@ -113,114 +117,156 @@ const ShowNearbyGarages = () => {
   };
 
   return (
-    <div style={styles.page}>
-      <div style={styles.header}>
-        <h1 style={styles.title}>Nearby Garages</h1>
-        <button style={styles.back} onClick={() => navigate('/')}>Back</button>
-      </div>
+    <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: "'Sora','Segoe UI',sans-serif" }}>
+      <Navbar />
 
-      {loading && <p style={styles.center}>Loading garages...</p>}
-      
-
-      <div style={styles.grid}>
-        {stores.map(store => (
-          <div key={store.store_id} style={styles.card}>
-            <div style={styles.cardHeader}>
-              <h3 style={styles.storeName}>{store.name}</h3>
-              <div style={styles.rating}>{store.rating?.toFixed ? store.rating.toFixed(1) : store.rating}</div>
-            </div>
-            <p style={styles.address}><MapPin size={14} style={{marginRight:8}}/>{store.address}</p>
-            {store.services && <p style={styles.services}><strong>Services:</strong> {store.services}</p>}
-            <p style={styles.meta}><strong>Phone:</strong> {store.phone_number || 'N/A'}</p>
-            <p style={styles.meta}><strong>Hours:</strong> {store.open_hours || 'N/A'}</p>
-            <div style={styles.actions}>
-              <button style={styles.call} onClick={() => { setSelectedStore(store); setShowBooking(true); }}>Book</button>
-              <a target="_blank" rel="noreferrer" href={`https://www.google.com/maps/search/?api=1&query=${store.latitude},${store.longitude}`} style={styles.map}>Open in Maps</a>
-            </div>
+      <div style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%)', padding: '3rem 1.5rem 2.5rem' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <h1 style={{ color: '#fff', fontSize: '2rem', fontWeight: 700, margin: 0 }}>Nearby Garages</h1>
+          <p style={{ color: '#94a3b8', margin: '0.5rem 0 1.5rem', fontSize: '1rem' }}>Find and book trusted garages in your area</p>
+          <div style={{ position: 'relative', maxWidth: 480 }}>
+            <Search size={18} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search by name, address, or service..."
+              style={{
+                width: '100%', padding: '0.75rem 1rem 0.75rem 2.75rem',
+                borderRadius: 10, border: '1.5px solid #1e40af',
+                background: 'rgba(255,255,255,0.08)', color: '#fff',
+                fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box',
+              }}
+            />
           </div>
-        ))}
+        </div>
       </div>
 
-      {/* Booking Modal */}
-      {showBooking && selectedStore && (
-        <div style={styles.modalOverlay} onClick={() => { if(!submitting) { setShowBooking(false); } }}>
-          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h2 style={{marginTop:0}}>Book: {selectedStore.name}</h2>
-            <form onSubmit={handleBookingSubmit} style={{display:'grid', gap:12}}>
-              <label style={styles.label}>
-                Vehicle Type
-                <select value={vehicleType} onChange={(e)=>setVehicleType(e.target.value)} style={styles.input} required>
-                  <option>Car</option>
-                  <option>Bike</option>
-                  <option>Truck</option>
-                </select>
-              </label>
-
-              <label style={styles.label}>
-                Service Type
-                <input value={serviceType} onChange={(e)=>setServiceType(e.target.value)} placeholder="e.g., Oil change" style={styles.input} required />
-              </label>
-
-              <div style={{display:'flex', gap:8}}>
-                <label style={{flex:1}}>
-                  Date
-                  <input type="date" value={bookingDate} onChange={(e)=>setBookingDate(e.target.value)} style={styles.input} required />
-                </label>
-                <label style={{flex:1}}>
-                  Time
-                  <input type="time" value={bookingTime} onChange={(e)=>setBookingTime(e.target.value)} style={styles.input} required />
-                </label>
+      <div style={{ maxWidth: 1100, margin: '2rem auto', padding: '0 1.5rem' }}>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '4rem', color: '#94a3b8', fontSize: '1rem' }}>Loading garages...</div>
+        ) : filtered.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '4rem', color: '#94a3b8' }}>No garages found for "{search}"</div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px,1fr))', gap: 20 }}>
+            {filtered.map(store => (
+              <div key={store.store_id} style={{
+                background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.06)', padding: '1.25rem',
+                display: 'flex', flexDirection: 'column', gap: 8,
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>{store.name}</h3>
+                  <StarRating rating={store.rating} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, color: '#64748b', fontSize: '0.82rem' }}>
+                  <MapPin size={13} style={{ flexShrink: 0, marginTop: 2 }} />
+                  <span>{store.address || 'N/A'}</span>
+                </div>
+                {store.services && (
+                  <div style={{ fontSize: '0.8rem', color: '#0369a1', background: '#f0f9ff', borderRadius: 6, padding: '0.4rem 0.6rem', border: '1px solid #bae6fd' }}>
+                    {store.services}
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: 12, fontSize: '0.8rem', color: '#64748b', flexWrap: 'wrap' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Phone size={12} />{store.phone_number || 'N/A'}
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Clock size={12} />{store.open_hours || 'N/A'}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                  <button onClick={() => openBooking(store)} style={{
+                    flex: 1, padding: '0.55rem', borderRadius: 8, border: 'none',
+                    background: 'linear-gradient(135deg, #1d4ed8, #0ea5e9)',
+                    color: '#fff', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer',
+                  }}>
+                    Book Now
+                  </button>
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${store.latitude},${store.longitude}`}
+                    target="_blank" rel="noreferrer"
+                    style={{
+                      flex: 1, padding: '0.55rem', borderRadius: 8,
+                      border: '1.5px solid #1d4ed8', color: '#1d4ed8',
+                      fontWeight: 600, fontSize: '0.85rem', textDecoration: 'none',
+                      textAlign: 'center', display: 'block',
+                    }}>
+                    View Map
+                  </a>
+                </div>
               </div>
+            ))}
+          </div>
+        )}
+      </div>
 
-              <div style={{display:'flex', gap:8}}>
-                <button type="submit" style={styles.submit} disabled={submitting}>{submitting ? 'Booking...' : 'Confirm Booking'}</button>
-                <button type="button" style={styles.cancel} onClick={() => setShowBooking(false)} disabled={submitting}>Cancel</button>
+      {showBooking && selectedStore && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '1rem',
+        }} onClick={() => !submitting && setShowBooking(false)}>
+          <div style={{
+            background: '#fff', borderRadius: 16, padding: '2rem',
+            width: '100%', maxWidth: 480, boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, color: '#0f172a' }}>Book Appointment</h2>
+                <p style={{ margin: '0.2rem 0 0', color: '#64748b', fontSize: '0.875rem' }}>{selectedStore.name}</p>
+              </div>
+              <button onClick={() => setShowBooking(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}>
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleBookingSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label style={labelStyle}>Vehicle Type</label>
+                <select value={vehicleType} onChange={e => setVehicleType(e.target.value)} style={inputStyle} required>
+                  <option>Car</option><option>Bike</option><option>Truck</option><option>SUV</option>
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Service Type</label>
+                <input value={serviceType} onChange={e => setServiceType(e.target.value)}
+                  placeholder="e.g., Oil change, Tyre repair..." style={inputStyle} required />
+              </div>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={labelStyle}>Date</label>
+                  <input type="date" value={bookingDate} onChange={e => setBookingDate(e.target.value)} style={inputStyle} required />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={labelStyle}>Time</label>
+                  <input type="time" value={bookingTime} onChange={e => setBookingTime(e.target.value)} style={inputStyle} required />
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+                <button type="submit" disabled={submitting} style={{
+                  flex: 1, padding: '0.7rem', borderRadius: 8, border: 'none',
+                  background: submitting ? '#93c5fd' : 'linear-gradient(135deg, #1d4ed8, #0ea5e9)',
+                  color: '#fff', fontWeight: 700, fontSize: '0.9rem', cursor: submitting ? 'not-allowed' : 'pointer',
+                }}>
+                  {submitting ? 'Booking...' : 'Confirm Booking'}
+                </button>
+                <button type="button" onClick={() => setShowBooking(false)} disabled={submitting} style={{
+                  padding: '0.7rem 1.25rem', borderRadius: 8, border: '1.5px solid #e2e8f0',
+                  background: '#fff', color: '#64748b', fontWeight: 600, cursor: 'pointer',
+                }}>
+                  Cancel
+                </button>
               </div>
             </form>
-            {bookingMessage && <p style={{marginTop:12,color: bookingSuccess ? '#10b981' : '#ef4444'}}>{bookingMessage}</p>}
+            {bookingMessage && (
+              <p style={{ marginTop: 12, color: bookingSuccess ? '#059669' : '#dc2626', fontWeight: 500, fontSize: '0.875rem' }}>
+                {bookingMessage}
+              </p>
+            )}
           </div>
         </div>
       )}
     </div>
   );
-};
-
-const styles = {
-  page: {
-    minHeight: '100vh',
-    background: 'linear-gradient(135deg, #0f172a 0%, #020617 100%)',
-    padding: '40px 16px',
-    color: '#e6eef8',
-    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
-  },
-  header: {
-    maxWidth: 1100,
-    margin: '0 auto 24px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center'
-  },
-  title: { fontSize: 28, margin: 0, background: 'linear-gradient(90deg,#60a5fa,#7c3aed)', WebkitBackgroundClip: 'text', color: 'transparent' },
-  back: { background: 'transparent', border: '1px solid #374151', color: '#cbd5e1', padding: '8px 12px', borderRadius: 8, cursor: 'pointer' },
-  center: { textAlign: 'center', width: '100%' },
-  grid: { maxWidth: 1100, margin: '20px auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: 20 },
-  card: { background: '#071028', border: '1px solid #172033', borderRadius: 10, padding: 16, boxShadow: '0 10px 30px rgba(2,6,23,0.6)' },
-  cardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  storeName: { margin: 0, fontSize: 18 },
-  rating: { background: '#06202e', color: '#9ae6b4', padding: '6px 8px', borderRadius: 6, fontWeight: 700 },
-  address: { color: '#9aa8bf', marginTop: 8, display: 'flex', alignItems: 'center' },
-  services: { color: '#9aa8bf', marginTop: 8 },
-  meta: { color: '#9aa8bf', marginTop: 6, fontSize: 13 },
-  actions: { marginTop: 12, display: 'flex', gap: 8 },
-  call: { background: '#4f46e5', color: 'white', padding: '8px 12px', borderRadius: 8, textDecoration: 'none' },
-  map: { background: 'transparent', color: '#60a5fa', padding: '8px 12px', borderRadius: 8, border: '1px solid #1f2937', textDecoration: 'none' }
-  ,
-  modalOverlay: { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 },
-  modal: { background: '#071028', border: '1px solid #23303b', padding: 20, width: 480, maxWidth: '95%', borderRadius: 10 },
-  label: { display: 'block', color: '#cbd5e1', fontSize: 13 },
-  input: { width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid #23303b', background: '#0b1220', color: '#e6eef8', boxSizing: 'border-box' },
-  submit: { background: '#10b981', color: 'white', padding: '10px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', flex: 1 },
-  cancel: { background: 'transparent', border: '1px solid #374151', color: '#cbd5e1', padding: '10px 14px', borderRadius: 8, cursor: 'pointer' }
 };
 
 export default ShowNearbyGarages;

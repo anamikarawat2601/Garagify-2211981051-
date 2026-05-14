@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { MapPin, Droplet, Battery, X, Menu } from 'lucide-react';
+import { MapPin, Droplet, Battery, X, Store } from 'lucide-react';
 import { useNavigate } from "react-router-dom";
+import Navbar from '../components/Navbar';
 
 const Home = () => {
   const [showFuelForm, setShowFuelForm] = useState(false);
@@ -11,16 +12,14 @@ const Home = () => {
   const [batteryService, setBatteryService] = useState("Battery Replacement");
   const [vehicleModel, setVehicleModel] = useState("");
   const [batteryLocation, setBatteryLocation] = useState("");
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const navigate = useNavigate();
 
-  const isLoggedIn = localStorage.getItem("token");
-
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', fontFamily: 'sans-serif' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', fontFamily: "'Sora','Segoe UI',sans-serif" }}>
+      <Navbar />
       
-      {/* Navbar */}
-      <nav style={{ backgroundColor: 'white', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', position: 'sticky', top: 0, zIndex: 1000 }}>
+      {/* OLD NAV REMOVED */}
+      {false && <nav style={{ display: 'none' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '1rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ fontSize: '1.5rem', fontWeight: 'bold', background: 'linear-gradient(to right, #4f46e5, #3b82f6)', WebkitBackgroundClip: 'text', color: 'transparent', cursor: 'pointer' }} onClick={() => navigate('/')}>
             Garagify
@@ -167,7 +166,7 @@ const Home = () => {
             )}
           </div>
         )}
-      </nav>
+      </nav>}
       
       {/* Hero Section */}
       <section style={{ position: 'relative', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
@@ -349,6 +348,35 @@ const Home = () => {
               )}
             </div>
 
+          </div>
+        </div>
+      </section>
+
+      {/* Register Garage CTA */}
+      <section style={{ padding: '4rem 1.5rem', backgroundColor: '#0f172a' }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(29,78,216,0.2)', borderRadius: '50%', width: 64, height: 64, marginBottom: '1rem' }}>
+            <Store size={28} color="#60a5fa" />
+          </div>
+          <h2 style={{ color: '#fff', fontSize: '1.75rem', fontWeight: 700, marginBottom: '0.75rem' }}>Own a Garage?</h2>
+          <p style={{ color: '#94a3b8', marginBottom: '2rem', fontSize: '1rem', maxWidth: 480, margin: '0 auto 2rem' }}>
+            Register on Garagify and start receiving service bookings from customers in your area.
+          </p>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button onClick={() => navigate('/addstore')} style={{
+              background: 'linear-gradient(135deg, #1d4ed8, #0ea5e9)',
+              color: '#fff', border: 'none', padding: '0.85rem 1.75rem',
+              borderRadius: 10, fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer',
+            }}>
+              Register Your Garage
+            </button>
+            <button onClick={() => navigate('/garage')} style={{
+              background: 'transparent', color: '#60a5fa',
+              border: '1.5px solid #1e40af', padding: '0.85rem 1.75rem',
+              borderRadius: 10, fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer',
+            }}>
+              Garage Dashboard
+            </button>
           </div>
         </div>
       </section>
